@@ -41,7 +41,7 @@ pub mod generated {
     tonic::include_proto!("classify");
 }
 
-pub use generated::{ClassifyRequest, ClassifyResponse};
+pub use generated::{ClassifyChainRequest, ClassifyRequest, ClassifyResponse, ConversationMessage};
 
 /// The generated tonic (async) service trait.
 pub use generated::classify_server::Classify as ClassifyTrait;
@@ -145,6 +145,60 @@ impl<R> generated::classify_server::Classify for ClassifyServiceImpl<R>
 where
     R: crate::classify::ClassifierRuntime + Send + Sync + 'static,
 {
+    async fn classify_chain(
+        &self,
+        request: tonic::Request<generated::ClassifyChainRequest>,
+    ) -> Result<tonic::Response<generated::ClassifyResponse>, tonic::Status> {
+        let req = request.into_inner();
+        if req.messages.is_empty() {
+            return Err(tonic::Status::invalid_argument(
+                "conversation messages must not be empty",
+            ));
+        }
+        let last = req.messages.last().expect("messages checked non-empty");
+        if last.role != generated::conversation_message::Role::User as i32 {
+            return Err(tonic::Status::invalid_argument(
+                "the final conversation message must have role USER",
+            ));
+        }
+        if req
+            .messages
+            .iter()
+            .any(|message| message.content.trim().is_empty())
+        {
+            return Err(tonic::Status::invalid_argument(
+                "conversation message content must not be empty",
+            ));
+        }
+
+        let context = match req.strategy {
+            x if x == generated::ConversationStrategy::LastMessage as i32 => last.content.clone(),
+            x if x == generated::ConversationStrategy::Unspecified as i32
+                || x == generated::ConversationStrategy::FullHistory as i32 =>
+            {
+                req.messages
+                    .iter()
+                    .map(format_conversation_message)
+                    .collect::<String>()
+            }
+            _ => {
+                return Err(tonic::Status::unimplemented(
+                    "requested conversation strategy is not implemented",
+                ))
+            }
+        };
+
+        // Reuse the existing stateless single-string path. Strategy selection
+        // only changes how the caller-supplied messages become that string.
+        self.classify(tonic::Request::new(generated::ClassifyRequest {
+            request_id: req.request_id,
+            session_id: req.session_id,
+            context,
+            signals: req.signals,
+        }))
+        .await
+    }
+
     async fn classify(
         &self,
         request: tonic::Request<generated::ClassifyRequest>,
@@ -245,6 +299,16 @@ where
         };
         Ok(tonic::Response::new(response))
     }
+}
+
+fn format_conversation_message(message: &generated::ConversationMessage) -> String {
+    let role = match message.role {
+        x if x == generated::conversation_message::Role::System as i32 => "system",
+        x if x == generated::conversation_message::Role::User as i32 => "user",
+        x if x == generated::conversation_message::Role::Assistant as i32 => "assistant",
+        _ => "unknown",
+    };
+    format!("{role}: {}\n", message.content)
 }
 
 impl ClassifyServer {
@@ -481,6 +545,16 @@ impl ClassifyClient {
     ) -> Result<ClassifyResponse, tonic::Status> {
         let mut client = generated::classify_client::ClassifyClient::new(self.channel.clone());
         let response = self.runtime.block_on(client.classify(request))?;
+        Ok(response.into_inner())
+    }
+
+    /// Send a role-tagged conversation chain over the persistent channel.
+    pub fn classify_chain(
+        &mut self,
+        request: ClassifyChainRequest,
+    ) -> Result<ClassifyResponse, tonic::Status> {
+        let mut client = generated::classify_client::ClassifyClient::new(self.channel.clone());
+        let response = self.runtime.block_on(client.classify_chain(request))?;
         Ok(response.into_inner())
     }
 }

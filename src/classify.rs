@@ -424,6 +424,57 @@ impl CandleClassifier {
         self.forward_calls.clone()
     }
 
+    /// Embed text with the resident model without applying the exact-result
+    /// service cache. This is exposed for controlled evaluation strategies that
+    /// need to combine independently embedded pieces of context.
+    pub fn embed_text(&self, text: &str) -> Result<Vec<f32>, ClassifyError> {
+        self.embedder
+            .embed(text)
+            .map_err(|e| ClassifyError::Embedding(e.to_string()))
+    }
+
+    /// Rank a precomputed embedding against the active taxonomy.
+    ///
+    /// The serving path normally obtains embeddings through [`Self::classify`].
+    /// Evaluation-only strategies such as split-context weighting can use this
+    /// method after composing multiple independently embedded inputs.
+    pub fn rank_embedding(&self, embedding: &[f32]) -> Result<ClassificationResult, ClassifyError> {
+        let (ranked, identity) = match self.taxonomy.as_ref() {
+            Some(t) => (
+                anchor_rank(embedding, &t.anchors, t.top_k),
+                (
+                    t.classifier_id.clone(),
+                    t.model_revision.clone(),
+                    t.taxonomy_revision.clone(),
+                ),
+            ),
+            None => (
+                cosine_rank(embedding, &self.prototypes),
+                (
+                    CLASSIFIER_ID.to_string(),
+                    MODEL_REVISION.to_string(),
+                    TAXONOMY_REVISION.to_string(),
+                ),
+            ),
+        };
+        let tokenizer_revision = self
+            .taxonomy
+            .as_ref()
+            .map(|t| t.tokenizer_revision.clone())
+            .unwrap_or_else(|| TOKENIZER_REVISION.to_string());
+        Ok(ClassificationResult {
+            classifier_id: identity.0,
+            model_revision: identity.1,
+            tokenizer_revision,
+            taxonomy_revision: identity.2,
+            status: ClassifyStatus::Ok,
+            ranked: ranked
+                .into_iter()
+                .map(|(id, score)| RankedSignal { id, score })
+                .collect(),
+        })
+    }
+
     /// Real Candle forward (tokenize + embed + rank) with the tokenize and
     /// forward stages measured independently from their own boundaries (AC-012).
     /// The runtime counters increment on every real tokenizer call / forward.
@@ -444,43 +495,9 @@ impl CandleClassifier {
             .embedder
             .embed_ids(ids)
             .map_err(|e| ClassifyError::Embedding(e.to_string()))?;
-        let (ranked, identity) = match self.taxonomy.as_ref() {
-            Some(t) => (
-                anchor_rank(&embedding, &t.anchors, t.top_k),
-                (
-                    t.classifier_id.clone(),
-                    t.model_revision.clone(),
-                    t.taxonomy_revision.clone(),
-                ),
-            ),
-            None => (
-                cosine_rank(&embedding, &self.prototypes),
-                (
-                    CLASSIFIER_ID.to_string(),
-                    MODEL_REVISION.to_string(),
-                    TAXONOMY_REVISION.to_string(),
-                ),
-            ),
-        };
-        let tokenizer_revision = self
-            .taxonomy
-            .as_ref()
-            .map(|t| t.tokenizer_revision.clone())
-            .unwrap_or_else(|| TOKENIZER_REVISION.to_string());
-        let ranked = ranked
-            .into_iter()
-            .map(|(id, score)| RankedSignal { id, score })
-            .collect();
         self.metrics
             .record_stage(LatencyStage::Forward, forward_start.elapsed());
-        Ok(ClassificationResult {
-            classifier_id: identity.0,
-            model_revision: identity.1,
-            tokenizer_revision,
-            taxonomy_revision: identity.2,
-            status: ClassifyStatus::Ok,
-            ranked,
-        })
+        self.rank_embedding(&embedding)
     }
 
     /// Build the classifier from the resident ModelCar directory, ranking

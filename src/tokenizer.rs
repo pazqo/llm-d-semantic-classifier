@@ -51,6 +51,26 @@ impl Tokenizer {
         Ok(Tokenizer { inner })
     }
 
+    /// Load a tokenizer while overriding its configured truncation window.
+    ///
+    /// This is intended for controlled evaluation of a compatible model whose
+    /// positional capacity is larger than the artifact's default window. It is
+    /// not used by the production loading path, where the artifact's pinned
+    /// tokenizer configuration preserves reference parity.
+    pub fn load_with_max_length<P: AsRef<Path>>(
+        path: P,
+        max_length: usize,
+    ) -> Result<Tokenizer, TokenizerError> {
+        let mut inner =
+            tokenizers::Tokenizer::from_file(path).map_err(TokenizerError::Tokenizers)?;
+        let mut truncation = inner.get_truncation().cloned().unwrap_or_default();
+        truncation.max_length = max_length;
+        inner
+            .with_truncation(Some(truncation))
+            .map_err(TokenizerError::Tokenizers)?;
+        Ok(Tokenizer { inner })
+    }
+
     /// Tokenize a single sequence, returning token IDs including `[CLS]` and
     /// `[SEP]` (matching the reference `TemplateProcessing`). Over-length inputs
     /// are truncated to the fixture's `max_length` by the crate.

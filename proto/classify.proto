@@ -23,6 +23,35 @@ message ClassifyRequest {
   repeated string signals = 4;
 }
 
+// A role-tagged conversation message. The server remains stateless: callers
+// send the relevant chain on every request.
+message ConversationMessage {
+  enum Role {
+    ROLE_UNSPECIFIED = 0;
+    SYSTEM = 1;
+    USER = 2;
+    ASSISTANT = 3;
+  }
+
+  Role role = 1;
+  string content = 2;
+}
+
+// Context manipulation strategy applied before classification.
+enum ConversationStrategy {
+  CONVERSATION_STRATEGY_UNSPECIFIED = 0;
+  CONVERSATION_STRATEGY_LAST_MESSAGE = 1;
+  CONVERSATION_STRATEGY_FULL_HISTORY = 2;
+}
+
+message ClassifyChainRequest {
+  string request_id = 1;
+  string session_id = 2;
+  repeated ConversationMessage messages = 3;
+  repeated string signals = 4;
+  ConversationStrategy strategy = 5;
+}
+
 // One ranked semantic signal: a label and its deterministic similarity score.
 message RankedSignal {
   string label = 1;
@@ -48,4 +77,5 @@ message ClassifyResponse {
 
 service Classify {
   rpc Classify(ClassifyRequest) returns (ClassifyResponse);
+  rpc ClassifyChain(ClassifyChainRequest) returns (ClassifyResponse);
 }

@@ -117,6 +117,58 @@ async fn i001_real_tonic_round_trip() {
         generated::ClassificationStatus::Ok as i32,
         "a successful classification must carry status OK"
     );
+
+    // The chain RPC accepts role-tagged messages while remaining stateless: the
+    // caller supplies the complete relevant conversation on every request.
+    let chain_response = client
+        .classify_chain(generated::ClassifyChainRequest {
+            request_id: "req-chain-0001".to_string(),
+            session_id: "sess-chain-0001".to_string(),
+            messages: vec![
+                generated::ConversationMessage {
+                    role: generated::conversation_message::Role::User as i32,
+                    content: "What is the capital of Portugal?".to_string(),
+                },
+                generated::ConversationMessage {
+                    role: generated::conversation_message::Role::Assistant as i32,
+                    content: "The capital of Portugal is Lisbon.".to_string(),
+                },
+                generated::ConversationMessage {
+                    role: generated::conversation_message::Role::User as i32,
+                    content: "Can you do that?".to_string(),
+                },
+            ],
+            signals: Vec::new(),
+            strategy: generated::ConversationStrategy::Unspecified as i32,
+        })
+        .await
+        .expect("chain round trip must succeed")
+        .into_inner();
+    assert_eq!(
+        chain_response.status,
+        generated::ClassificationStatus::Ok as i32,
+        "an unspecified chain strategy must use the initial serialization behavior"
+    );
+    assert_eq!(chain_response.request_id, "req-chain-0001");
+
+    let last_message_response = client
+        .classify_chain(generated::ClassifyChainRequest {
+            request_id: "req-chain-last".to_string(),
+            session_id: "sess-chain-0001".to_string(),
+            messages: vec![generated::ConversationMessage {
+                role: generated::conversation_message::Role::User as i32,
+                content: "Can you do that?".to_string(),
+            }],
+            signals: Vec::new(),
+            strategy: generated::ConversationStrategy::LastMessage as i32,
+        })
+        .await
+        .expect("last-message chain strategy must succeed")
+        .into_inner();
+    assert_eq!(
+        last_message_response.request_id, "req-chain-last",
+        "last-message strategy must return the chain request id"
+    );
     // ...and carry no final route at all. AC-010 is now a SCHEMA invariant
     // (U-010): `ClassifyResponse` has no route/endpoint field, so a route is
     // unrepresentable on the wire (ADR-0001, interpretation (B)).
