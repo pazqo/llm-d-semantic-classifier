@@ -1,0 +1,20 @@
+[
+  {
+    "type": "console.page/route",
+    "properties": {
+      "exact": true,
+      "path": "/semantic-classifier",
+      "component": { "$codeRef": "SemanticClassifierPage" }
+    }
+  },
+  {
+    "type": "console.navigation/href",
+    "properties": {
+      "id": "semantic-classifier",
+      "name": "Semantic Classifier",
+      "href": "/semantic-classifier",
+      "perspective": "dev",
+      "section": "home"
+    }
+  }
+]

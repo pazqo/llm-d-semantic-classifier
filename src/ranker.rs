@@ -105,7 +105,7 @@ pub fn anchor_rank(embedding: &[f32], anchors: &[AnchorSet], top_k: usize) -> Ve
 /// Cosine similarity between two equal-length vectors: dot / (|a| * |b|).
 ///
 /// Degenerate (zero-norm) vectors score 0.0 against everything.
-fn cosine_similarity(a: &[f32], b: &[f32]) -> f64 {
+pub fn cosine_similarity(a: &[f32], b: &[f32]) -> f64 {
     let dot: f64 = a
         .iter()
         .zip(b.iter())

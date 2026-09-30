@@ -12,6 +12,7 @@ pub mod classify;
 pub mod config;
 pub mod dummy_gateway;
 pub mod embedding;
+pub mod eval;
 pub mod grpc;
 pub mod handoff;
 pub mod head;

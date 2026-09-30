@@ -28,6 +28,14 @@ name = "llm-d-sc-playground"
 path = "src/bin/playground.rs"
 required-features = ["playground"]
 
+[[bin]]
+name = "llm-d-sc-local-router"
+path = "src/bin/local-router.rs"
+
+[[bin]]
+name = "llm-d-sc-api"
+path = "src/bin/api-server.rs"
+
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -43,6 +51,8 @@ tokio = { version = "1", features = ["rt-multi-thread", "net", "time", "macros"]
 tokio-stream = "0.1"
 tonic-prost = "0.14"
 blake3 = "1.8.6"
+axum = "0.8"
+tower-http = { version = "0.6", features = ["cors"] }
 # default-features = false drops three build-time dependencies we never use:
 # esaxx-rs (C++, only needed by the unigram TRAINER), onig (C oniguruma), and
 # indicatif (progress bars). We only load a pretrained tokenizer.json via

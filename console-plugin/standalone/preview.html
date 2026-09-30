@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Semantic Classifier — Preview</title>
+  <style>
+    :root {
+      --bg: #fff;
+      --bg-secondary: #f0f0f0;
+      --text: #151515;
+      --text-subtle: #6a6e73;
+      --border: #d2d2d2;
+      --success: #3e8635;
+      --danger: #c9190b;
+      --warning: #f0ab00;
+      --info: #2b9af3;
+      --radius: 8px;
+      --radius-sm: 4px;
+      --font: 'RedHatText', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1b1d21;
+        --bg-secondary: #292c30;
+        --text: #e0e0e0;
+        --text-subtle: #8a8d90;
+        --border: #444;
+      }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font); color: var(--text); background: var(--bg); line-height: 1.5; }
+    .page { max-width: 1200px; margin: 0 auto; padding: 0 24px 48px; }
+
+    .header { padding: 24px 0 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .header h1 { font-size: 24px; font-weight: 600; }
+    .header .meta { color: var(--text-subtle); font-size: 14px; margin-top: 4px; }
+    .badge { display: inline-block; padding: 2px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; background: var(--success); color: #fff; }
+    .badge-warning { background: var(--warning); color: #151515; }
+
+    .tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 24px; }
+    .tab { padding: 12px 20px; cursor: pointer; font-size: 15px; font-weight: 500; color: var(--text-subtle); border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s; }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--info); border-bottom-color: var(--info); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+    .card { padding: 16px; border: 1px solid var(--border); border-radius: var(--radius); }
+    .card small { color: var(--text-subtle); font-size: 13px; }
+    .card strong { display: block; font-size: 28px; margin-top: 4px; }
+    .card.danger strong { color: var(--danger); }
+
+    .section { margin-top: 32px; }
+    .section h2 { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+    .section .muted { color: var(--text-subtle); font-size: 14px; margin-bottom: 16px; }
+    .section-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { color: var(--text-subtle); font-size: 13px; font-weight: 500; }
+
+    .matrix { border-collapse: collapse; width: auto; }
+    .matrix th, .matrix td { text-align: center; min-width: 80px; border: 1px solid var(--border); padding: 8px 16px; }
+    .matrix .diag { background: var(--success); color: #fff; font-weight: 700; }
+    .matrix .off { background: var(--danger); color: #fff; font-weight: 700; }
+
+    .conf-high { color: var(--danger); font-weight: 600; }
+    .conf-low { color: var(--warning); font-weight: 600; }
+
+    .filter-label { display: flex; align-items: center; gap: 8px; font-size: 14px; white-space: nowrap; }
+    .filter-label select { padding: 4px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: transparent; color: var(--text); font-size: 14px; }
+
+    .classes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin: 16px 0; }
+    .class-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+    .class-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .class-card-header strong { font-size: 15px; }
+    .class-count { color: var(--text-subtle); font-size: 13px; margin-left: auto; }
+    .anchor-list { list-style: none; }
+    .anchor-list li { padding: 6px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    .anchor-list li:last-child { border-bottom: none; }
+    .toggle-switch { position: relative; width: 36px; height: 20px; background: var(--border); border-radius: 10px; cursor: pointer; border: none; transition: background 0.2s; flex-shrink: 0; }
+    .toggle-switch.on { background: var(--success); }
+    .toggle-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: #fff; border-radius: 50%; transition: transform 0.2s; }
+    .toggle-switch.on::after { transform: translateX(16px); }
+    .anchor-disabled { opacity: 0.45; }
+    .anchor-disabled span { text-decoration: line-through; }
+
+    .add-row { display: flex; gap: 8px; margin-top: 8px; }
+    .add-row input, .add-class-row input, .test-input { flex: 1; padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; background: transparent; color: var(--text); }
+    .add-row button, .add-class-row button { padding: 6px 14px; border: 1px solid var(--info); background: transparent; color: var(--info); border-radius: var(--radius-sm); cursor: pointer; font-size: 14px; font-weight: 500; }
+    .add-row button:hover, .add-class-row button:hover { background: rgba(43,154,243,0.1); }
+    .add-class-row { display: flex; gap: 12px; align-items: center; margin-top: 16px; max-width: 420px; }
+
+    .status { display: inline-block; padding: 2px 10px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; color: #fff; }
+    .status-completed { background: var(--success); }
+    .status-running { background: var(--info); }
+    .status-failed { background: var(--danger); }
+
+    .btn-primary { padding: 10px 20px; background: var(--info); color: #fff; border: none; border-radius: var(--radius-sm); font-size: 15px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-primary:hover { background: #1f7bc9; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-secondary { padding: 10px 20px; background: transparent; color: var(--info); border: 1px solid var(--info); border-radius: var(--radius-sm); font-size: 15px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-secondary:hover { background: rgba(43,154,243,0.1); }
+    .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .alert { padding: 16px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 14px; }
+    .alert-info { background: rgba(43,154,243,0.1); border: 1px solid var(--info); color: var(--info); }
+    .alert-danger { background: rgba(201,25,11,0.1); border: 1px solid var(--danger); color: var(--danger); }
+    .alert-success { background: rgba(62,134,53,0.1); border: 1px solid var(--success); color: var(--success); }
+
+    .test-section { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 16px; }
+    .test-input { width: 100%; padding: 10px 14px; font-size: 15px; }
+    .test-result { margin-top: 16px; }
+    .score-bar-container { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+    .score-bar-label { min-width: 120px; font-size: 14px; text-align: right; }
+    .score-bar-track { flex: 1; height: 20px; background: var(--bg-secondary); border-radius: var(--radius-sm); overflow: hidden; }
+    .score-bar-fill { height: 100%; border-radius: var(--radius-sm); transition: width 0.3s; }
+    .score-bar-value { min-width: 50px; font-size: 13px; color: var(--text-subtle); }
+    .anchor-detail-table { margin-top: 12px; }
+    .anchor-detail-table td { font-size: 13px; padding: 4px 8px; }
+    .similarity-high { color: var(--success); font-weight: 600; }
+    .similarity-mid { color: var(--warning); }
+    .similarity-low { color: var(--text-subtle); }
+
+    .loading { display: flex; align-items: center; gap: 12px; padding: 48px; justify-content: center; color: var(--text-subtle); }
+    .spinner { width: 24px; height: 24px; border: 3px solid var(--border); border-top-color: var(--info); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty { text-align: center; padding: 24px; color: var(--text-subtle); }
+
+    @media (max-width: 700px) {
+      .summary { grid-template-columns: repeat(2, 1fr); }
+      .header { flex-direction: column; align-items: flex-start; gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+  <div class="header" id="page-header">
+    <div>
+      <h1>Semantic Classifier</h1>
+      <div class="meta" id="header-meta">Connecting to API...</div>
+    </div>
+    <span class="badge badge-warning" id="status-badge">Loading</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="evaluation">Evaluation</div>
+    <div class="tab" data-tab="test">Test</div>
+    <div class="tab" data-tab="training">Model &amp; Training</div>
+  </div>
+
+  <div id="evaluation" class="tab-content active"></div>
+  <div id="test" class="tab-content"></div>
+  <div id="training" class="tab-content"></div>
+</div>
+
+<script>
+const API = 'http://localhost:8080';
+const fmt = v => `${(v * 100).toFixed(1)}%`;
+
+let definition = null;
+let evalData = null;
+let classes = [];
+let disabledAnchors = {};
+let trainingHistory = [];
+let isTraining = false;
+
+// Tab switching
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.tab).classList.add('active');
+  });
+});
+
+async function apiFetch(path, opts) {
+  const res = await fetch(`${API}${path}`, opts);
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`${res.status} ${res.statusText}: ${text}`);
+  }
+  return res.json();
+}
+
+async function loadAll() {
+  document.getElementById('evaluation').innerHTML = '<div class="loading"><div class="spinner"></div>Loading classifier data...</div>';
+
+  try {
+    const [def, ev] = await Promise.all([
+      apiFetch('/api/v1/definition'),
+      apiFetch('/api/v1/evaluate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      }),
+    ]);
+
+    definition = def;
+    evalData = ev;
+    classes = def.labels.map(label => ({
+      name: label,
+      anchors: [...(def.anchors[label] || [])],
+    }));
+
+    document.getElementById('header-meta').innerHTML =
+      `Model <strong>${def.model_repo}</strong> · Revision <strong>${def.taxonomy_revision}</strong> · Dataset <strong>${ev.dataset}</strong>`;
+    document.getElementById('status-badge').className = 'badge';
+    document.getElementById('status-badge').textContent = 'Active';
+
+    renderEvaluation();
+    renderTest();
+    renderTraining();
+  } catch (err) {
+    document.getElementById('evaluation').innerHTML =
+      `<div class="alert alert-danger">
+        <strong>Failed to connect to API server</strong><br>
+        ${err.message}<br><br>
+        Make sure the API server is running:<br>
+        <code>LLM_D_SC_MODEL_DIR=&lt;model-path&gt; cargo run --bin llm-d-sc-api</code>
+      </div>`;
+    document.getElementById('status-badge').className = 'badge badge-warning';
+    document.getElementById('status-badge').textContent = 'Offline';
+  }
+}
+
+// === EVALUATION TAB ===
+function renderEvaluation() {
+  const ev = evalData;
+  const labels = ev.labels;
+  const matrix = ev.confusion;
+  const predictions = ev.predictions;
+
+  let html = `
+    <div class="summary">
+      <div class="card"><small>Examples</small><strong>${ev.total}</strong></div>
+      <div class="card"><small>Accuracy</small><strong>${fmt(ev.accuracy)}</strong></div>
+      <div class="card"><small>Macro F1</small><strong>${fmt(ev.macro_f1)}</strong></div>
+      <div class="card ${ev.error_count > 0 ? 'danger' : ''}"><small>Errors</small><strong>${ev.error_count}</strong></div>
+    </div>
+
+    <div class="section">
+      <h2>Confusion matrix</h2>
+      <p class="muted">Rows are expected classes; columns are predicted classes.</p>
+      <div style="overflow-x:auto">
+        <table class="matrix">
+          <thead><tr><th></th>${labels.map(n => `<th>${n}</th>`).join('')}</tr></thead>
+          <tbody>${matrix.map((row, ri) => `<tr><th>${labels[ri]}</th>${row.map((v, ci) => `<td class="${ri === ci ? 'diag' : v > 0 ? 'off' : ''}">${v}</td>`).join('')}</tr>`).join('')}</tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Per-class metrics</h2>
+      <table>
+        <thead><tr><th>Class</th><th>Precision</th><th>Recall</th><th>F1</th><th>Support</th></tr></thead>
+        <tbody>${ev.label_metrics.map(m => `<tr><td><strong>${m.label}</strong></td><td>${fmt(m.precision)}</td><td>${fmt(m.recall)}</td><td>${fmt(m.f1)}</td><td>${m.support}</td></tr>`).join('')}</tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div>
+          <h2>Misclassifications</h2>
+          <p class="muted">These examples are candidates for anchor changes or label review.</p>
+        </div>
+        <label class="filter-label">Show
+          <select id="error-filter">
+            <option value="all">all errors</option>
+            <option value="high">high confidence only</option>
+            <option value="low">low confidence only</option>
+          </select>
+        </label>
+      </div>
+      <table>
+        <thead><tr><th>Text</th><th>Expected</th><th>Predicted</th><th>Confidence</th><th>Alternatives</th></tr></thead>
+        <tbody id="errors-body"></tbody>
+      </table>
+    </div>
+  `;
+  document.getElementById('evaluation').innerHTML = html;
+  renderErrors();
+  document.getElementById('error-filter').addEventListener('change', renderErrors);
+}
+
+function renderErrors() {
+  const filter = document.getElementById('error-filter').value;
+  const errs = evalData.predictions
+    .filter(p => p.expected !== p.predicted)
+    .filter(p => filter === 'all' || (filter === 'high' ? p.confidence >= 0.75 : p.confidence < 0.75));
+
+  document.getElementById('errors-body').innerHTML = errs.length === 0
+    ? '<tr><td colspan="5" class="empty">No errors match this filter.</td></tr>'
+    : errs.map(e => {
+      const alts = (e.alternatives || []).map(a => `${a.label} (${fmt(a.score)})`).join(', ') || '—';
+      return `<tr><td>${escHtml(e.text)}</td><td>${e.expected}</td><td>${e.predicted}</td><td class="${e.confidence >= 0.75 ? 'conf-high' : 'conf-low'}">${fmt(e.confidence)}</td><td>${alts}</td></tr>`;
+    }).join('');
+}
+
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// === TEST TAB ===
+function renderTest() {
+  document.getElementById('test').innerHTML = `
+    <div class="section" style="margin-top:0">
+      <h2>Test classifier</h2>
+      <p class="muted">Enter text to classify against current anchors.</p>
+      <div class="test-section">
+        <input type="text" class="test-input" id="test-text" placeholder="Enter text to classify..." onkeydown="if(event.key==='Enter')runClassify()" />
+        <button class="btn-primary" id="classify-btn" onclick="runClassify()">Classify</button>
+      </div>
+      <div id="classify-result"></div>
+    </div>
+  `;
+}
+
+async function runClassify() {
+  const text = document.getElementById('test-text').value.trim();
+  if (!text) return;
+
+  const btn = document.getElementById('classify-btn');
+  btn.disabled = true;
+  btn.textContent = 'Classifying...';
+  document.getElementById('classify-result').innerHTML = '<div class="loading"><div class="spinner"></div>Running classification...</div>';
+
+  try {
+    const result = await apiFetch('/api/v1/classify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    });
+
+    const maxScore = Math.max(...result.label_scores.map(s => s.score));
+
+    let html = `
+      <div class="test-result">
+        <div class="summary" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 16px;">
+          <div class="card"><small>Predicted class</small><strong>${result.predicted}</strong></div>
+          <div class="card"><small>Confidence</small><strong>${fmt(result.confidence)}</strong></div>
+        </div>
+
+        <h3 style="font-size:16px; margin-bottom:8px;">Label scores</h3>
+        ${result.label_scores.map(s => {
+          const pct = maxScore > 0 ? (s.score / maxScore * 100) : 0;
+          const color = s.label === result.predicted ? 'var(--info)' : 'var(--border)';
+          return `
+            <div class="score-bar-container">
+              <span class="score-bar-label">${s.label}</span>
+              <div class="score-bar-track"><div class="score-bar-fill" style="width:${pct}%; background:${color}"></div></div>
+              <span class="score-bar-value">${fmt(s.score)}</span>
+            </div>`;
+        }).join('')}
+
+        <h3 style="font-size:16px; margin: 16px 0 8px;">Anchor contributions</h3>
+        <table class="anchor-detail-table">
+          <thead><tr><th>Label</th><th>Anchor</th><th>Similarity</th></tr></thead>
+          <tbody>
+            ${result.anchor_details.map(a => {
+              const cls = a.similarity > 0.5 ? 'similarity-high' : a.similarity > 0.3 ? 'similarity-mid' : 'similarity-low';
+              return `<tr><td>${a.label}</td><td>${escHtml(a.anchor_text)}</td><td class="${cls}">${a.similarity.toFixed(4)}</td></tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+    document.getElementById('classify-result').innerHTML = html;
+  } catch (err) {
+    document.getElementById('classify-result').innerHTML =
+      `<div class="alert alert-danger">${err.message}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Classify';
+  }
+}
+
+// === TRAINING TAB ===
+function renderTraining() {
+  document.getElementById('training').innerHTML = `
+    <div class="section" style="margin-top:0">
+      <h2>Class configuration</h2>
+      <p class="muted">Edit anchor prompts for each class. Changes take effect after retraining (= re-embedding anchors).</p>
+      <div class="classes-grid" id="classes-grid"></div>
+      <div class="add-class-row">
+        <input id="new-class-input" type="text" placeholder="New class name..." />
+        <button onclick="addClass()">+ Add class</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Retrain (re-embed anchors)</h2>
+      <p class="muted">Push current anchors to the API server. This re-embeds all anchors and re-runs evaluation — no GPU needed.</p>
+      <div id="training-alert"></div>
+      <button class="btn-primary" id="retrain-btn" onclick="startRetrain()">&#x21bb; Update anchors &amp; evaluate</button>
+    </div>
+
+    <div class="section">
+      <h2>Training history</h2>
+      <table>
+        <thead><tr><th>Run</th><th>Started</th><th>Status</th><th>Accuracy</th><th>Macro F1</th></tr></thead>
+        <tbody id="history-body"></tbody>
+      </table>
+    </div>
+  `;
+  renderClasses();
+  renderHistory();
+}
+
+function isAnchorDisabled(className, anchor) {
+  return (disabledAnchors[className] || []).includes(anchor);
+}
+function toggleAnchor(ci, ai) {
+  const cls = classes[ci];
+  const anchor = cls.anchors[ai];
+  if (!disabledAnchors[cls.name]) disabledAnchors[cls.name] = [];
+  const idx = disabledAnchors[cls.name].indexOf(anchor);
+  if (idx >= 0) disabledAnchors[cls.name].splice(idx, 1);
+  else disabledAnchors[cls.name].push(anchor);
+  renderClasses();
+}
+function activeCount(cls) {
+  const disabled = disabledAnchors[cls.name] || [];
+  return cls.anchors.filter(a => !disabled.includes(a)).length;
+}
+function renderClasses() {
+  const grid = document.getElementById('classes-grid');
+  grid.innerHTML = classes.map((cls, ci) => `
+    <div class="class-card">
+      <div class="class-card-header">
+        <strong>${cls.name}</strong>
+        <span class="class-count">${activeCount(cls)}/${cls.anchors.length} active</span>
+      </div>
+      <ul class="anchor-list">
+        ${cls.anchors.map((a, ai) => {
+          const disabled = isAnchorDisabled(cls.name, a);
+          return `<li class="${disabled ? 'anchor-disabled' : ''}"><span>${escHtml(a)}</span><button class="toggle-switch ${disabled ? '' : 'on'}" onclick="toggleAnchor(${ci},${ai})" title="${disabled ? 'Enable' : 'Disable'}"></button></li>`;
+        }).join('')}
+      </ul>
+      <div class="add-row">
+        <input type="text" id="anchor-input-${ci}" placeholder="Add anchor prompt..." onkeydown="if(event.key==='Enter')addAnchor(${ci})" />
+        <button onclick="addAnchor(${ci})">+ Add</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function addAnchor(ci) {
+  const input = document.getElementById(`anchor-input-${ci}`);
+  const val = input.value.trim();
+  if (!val) return;
+  classes[ci].anchors.push(val);
+  input.value = '';
+  renderClasses();
+}
+function addClass() {
+  const input = document.getElementById('new-class-input');
+  const name = input.value.trim().toUpperCase().replace(/\s+/g, '_');
+  if (!name || classes.some(c => c.name === name)) return;
+  classes.push({ name, anchors: [] });
+  input.value = '';
+  renderClasses();
+}
+
+async function startRetrain() {
+  if (isTraining) return;
+  isTraining = true;
+  const btn = document.getElementById('retrain-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px"></div> Updating...';
+  document.getElementById('training-alert').innerHTML = '<div class="alert alert-info">Re-embedding anchors and evaluating...</div>';
+
+  try {
+    const anchors = {};
+    const labels = [];
+    for (const cls of classes) {
+      labels.push(cls.name);
+      const disabled = disabledAnchors[cls.name] || [];
+      anchors[cls.name] = cls.anchors.filter(a => !disabled.includes(a));
+    }
+
+    await apiFetch('/api/v1/definition/anchors', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ labels, anchors }),
+    });
+
+    const ev = await apiFetch('/api/v1/evaluate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+
+    evalData = ev;
+
+    trainingHistory.unshift({
+      id: `run-${Date.now()}`,
+      startedAt: new Date().toISOString(),
+      status: 'completed',
+      accuracy: ev.accuracy,
+      macroF1: ev.macro_f1,
+    });
+
+    document.getElementById('training-alert').innerHTML =
+      `<div class="alert alert-success">Anchors updated. Accuracy: ${fmt(ev.accuracy)}, Macro F1: ${fmt(ev.macro_f1)}</div>`;
+
+    renderEvaluation();
+    renderHistory();
+  } catch (err) {
+    document.getElementById('training-alert').innerHTML =
+      `<div class="alert alert-danger">Failed: ${err.message}</div>`;
+  } finally {
+    isTraining = false;
+    btn.disabled = false;
+    btn.innerHTML = '&#x21bb; Update anchors &amp; evaluate';
+  }
+}
+
+function renderHistory() {
+  const body = document.getElementById('history-body');
+  if (trainingHistory.length === 0) {
+    body.innerHTML = '<tr><td colspan="5" class="empty">No training runs yet. Edit anchors and click "Update anchors & evaluate".</td></tr>';
+    return;
+  }
+  body.innerHTML = trainingHistory.map(r => `
+    <tr>
+      <td>${r.id}</td>
+      <td>${new Date(r.startedAt).toLocaleString()}</td>
+      <td><span class="status status-${r.status}">${r.status}</span></td>
+      <td>${r.accuracy != null ? fmt(r.accuracy) : '—'}</td>
+      <td>${r.macroF1 != null ? fmt(r.macroF1) : '—'}</td>
+    </tr>
+  `).join('');
+}
+
+loadAll();
+</script>
+</body>
+</html>

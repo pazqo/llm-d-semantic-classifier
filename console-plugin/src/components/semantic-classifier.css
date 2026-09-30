@@ -1,0 +1,373 @@
+/* Loading */
+.sc-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 48px 0;
+  justify-content: center;
+}
+
+/* Header */
+.sc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.sc-header__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: 14px;
+  color: #6a6e73;
+}
+
+.sc-header__sep {
+  color: #d2d2d2;
+  margin: 0 4px;
+}
+
+.sc-badge {
+  display: inline-block;
+  padding: 3px 14px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sc-badge--green {
+  background: #3e8635;
+  color: #fff;
+}
+
+/* Tabs — custom horizontal tabs that work across PF versions */
+.sc-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid #d2d2d2;
+  padding: 0 24px;
+}
+
+.sc-tabs__btn {
+  padding: 12px 20px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #6a6e73;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.sc-tabs__btn:hover {
+  color: #151515;
+}
+
+.sc-tabs__btn--active {
+  color: #06c;
+  border-bottom-color: #06c;
+}
+
+/* Summary cards */
+.semantic-classifier__summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.semantic-classifier__card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  border: 1px solid #d2d2d2;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.semantic-classifier__card small {
+  color: #6a6e73;
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.semantic-classifier__card strong {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.semantic-classifier__card--danger strong {
+  color: #c9190b;
+}
+
+/* Sections */
+.semantic-classifier__section {
+  margin-top: 32px;
+}
+
+.semantic-classifier__section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.semantic-classifier__muted {
+  color: #6a6e73;
+  margin: 4px 0 16px;
+  font-size: 14px;
+}
+
+/* Tables */
+.semantic-classifier__table {
+  width: 100%;
+  margin: 12px 0;
+  border-collapse: collapse;
+}
+
+.semantic-classifier__table th,
+.semantic-classifier__table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #d2d2d2;
+  text-align: left;
+}
+
+.semantic-classifier__table th {
+  color: #6a6e73;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Confusion matrix */
+.semantic-classifier__matrix-wrapper {
+  overflow-x: auto;
+  margin: 12px 0;
+}
+
+.semantic-classifier__matrix {
+  border-collapse: collapse;
+}
+
+.semantic-classifier__matrix th,
+.semantic-classifier__matrix td {
+  padding: 8px 16px;
+  border: 1px solid #d2d2d2;
+  text-align: center;
+  min-width: 80px;
+}
+
+.semantic-classifier__matrix th {
+  font-size: 13px;
+  color: #6a6e73;
+}
+
+.semantic-classifier__matrix-diagonal {
+  background-color: #3e8635;
+  color: #fff;
+  font-weight: bold;
+}
+
+.semantic-classifier__matrix-offdiag {
+  background-color: #c9190b;
+  color: #fff;
+  font-weight: bold;
+}
+
+/* Confidence colors */
+.semantic-classifier__conf-high {
+  color: #c9190b;
+  font-weight: 600;
+}
+
+.semantic-classifier__conf-low {
+  color: #f0ab00;
+}
+
+/* Filter dropdown */
+.semantic-classifier__filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.semantic-classifier__filter select {
+  padding: 4px 8px;
+  border: 1px solid #d2d2d2;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+}
+
+.semantic-classifier__empty {
+  padding: 24px;
+  text-align: center;
+  color: #6a6e73;
+}
+
+/* Class cards */
+.semantic-classifier__classes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.semantic-classifier__class-card {
+  border: 1px solid #d2d2d2;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.semantic-classifier__class-card--disabled {
+  opacity: 0.5;
+  border-style: dashed;
+}
+
+.semantic-classifier__class-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.semantic-classifier__class-count {
+  color: #6a6e73;
+  font-size: 13px;
+  margin-left: auto;
+}
+
+.semantic-classifier__anchor-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 8px;
+}
+
+.semantic-classifier__anchor-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid #d2d2d2;
+  font-size: 14px;
+  gap: 8px;
+}
+
+.semantic-classifier__anchor-list li:last-child {
+  border-bottom: none;
+}
+
+.semantic-classifier__add-anchor {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.semantic-classifier__add-anchor > :first-child {
+  flex: 1;
+}
+
+.semantic-classifier__add-class {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 16px;
+  max-width: 400px;
+}
+
+.semantic-classifier__add-class > :first-child {
+  flex: 1;
+}
+
+/* Training status badges */
+.semantic-classifier__status {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.semantic-classifier__status--completed {
+  background-color: #3e8635;
+  color: #fff;
+}
+
+.semantic-classifier__status--running {
+  background-color: #2b9af3;
+  color: #fff;
+}
+
+.semantic-classifier__status--failed {
+  background-color: #c9190b;
+  color: #fff;
+}
+
+.semantic-classifier__status--pending {
+  background-color: #6a6e73;
+  color: #fff;
+}
+
+.semantic-classifier__alert {
+  margin-bottom: 16px;
+}
+
+/* Test classifier */
+.semantic-classifier__test-input-area {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.semantic-classifier__test-input-area textarea {
+  width: 100%;
+  min-height: 100px;
+  font-size: 15px;
+  line-height: 1.5;
+  padding: 12px;
+}
+
+.semantic-classifier__test-input-area > button {
+  align-self: flex-end;
+}
+
+.semantic-classifier__test-result {
+  margin-top: 16px;
+}
+
+.semantic-classifier__score-bars {
+  margin-top: 8px;
+}
+
+/* Similarity colors */
+.semantic-classifier__similarity-high {
+  color: #3e8635;
+  font-weight: 600;
+}
+
+.semantic-classifier__similarity-mid {
+  color: #f0ab00;
+}
+
+.semantic-classifier__similarity-low {
+  color: #6a6e73;
+}
+
+/* Responsive */
+@media (max-width: 700px) {
+  .semantic-classifier__summary {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+}
